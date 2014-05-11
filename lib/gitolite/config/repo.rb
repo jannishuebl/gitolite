@@ -41,6 +41,13 @@ module Gitolite
         end
       end
 
+      def remove_permission(perm, refex = "", user)
+        if perm =~ ALLOWED_PERMISSIONS
+          @permissions.last[perm][refex].delete_if {|i| i == user}
+        else
+          raise InvalidPermissionError, "#{perm} is not in the allowed list of permissions!"
+        end
+      end
 
       def set_git_config(key, value)
         @config[key] = value

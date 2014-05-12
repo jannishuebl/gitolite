@@ -56,6 +56,45 @@ describe Gitolite::Config::Repo do
     end
   end
 
+  describe '#remove_permission' do
+
+    before(:each) do
+      @repo = Gitolite::Config::Repo.new("CoolRepo")
+      users = %w[bob joe susan sam bill]
+      @repo.add_permission("RW", "", users)
+      @repo.add_permission("RW+", "", users)
+      @repo.add_permission("RW+", "refs/heads/master", users)
+    end
+    
+    it 'should allow removing a permission from the permissions list' do
+      @repo.remove_permission("RW")
+      @repo.permissions.last.size.should == 1
+    end
+
+    it 'should allow removing a permission while specifying a refex' do
+      @repo.remove_permission("RW+", "refs/heads/master")
+      @repo.permissions[0]["RW+"].has_key?("refs/heads/master").should be_false
+      @repo.permissions[0].size.should == 2
+    end
+
+    it 'should allow removing a user from permission list' do
+      @repo.remove_permission("RW+", "", "bob", "joe")
+      @repo.permissions.first["RW+"][""].should_not == %w[bob, joe]
+    end
+
+    it 'should allow removing all users from permission list' do
+      @repo.remove_permission("RW+", "", "bob", "joe")
+      @repo.remove_permission("RW+", "", "susan", "bill", "sam")
+      @repo.permissions[0]["RW+"].has_key?("").should be_false
+      @repo.permissions[0].size.should == 2
+    end
+
+    it 'should not allow removing an invalid permission via an InvalidPermissionError' do
+      expect {@repo.remove_permission("BadPerm")}.to raise_error
+    end
+  end
+
+
   describe "permissions" do
     before(:each) do
       @repo = Gitolite::Config::Repo.new("CoolRepo")
